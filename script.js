@@ -34,7 +34,7 @@ const helsinkiRoute = [
     description: "Senate Square, cuore storico della città."
   },
   {
-    name: "Cattedrale della Dormizione (Uspenski)",
+    name: "Cattedrale Uspenski",
     coords: [60.1686, 24.9583],
     photos: ["uspenski1.jpg", "uspenski2.jpg"],
     description: "Cattedrale ortodossa di Uspenski."
@@ -46,7 +46,7 @@ const helsinkiRoute = [
     description: "Piscine sul mare con vista sul porto."
   },
   {
-    name: "Mercato coperto (Old Market Hall)",
+    name: "Mercato coperto",
     coords: [60.1679, 24.9526],
     photos: ["market1.jpg", "market2.jpg"],
     description: "Mercato coperto storico sul waterfront."
@@ -88,7 +88,7 @@ const helsinkiRoute = [
     description: "Omena Hotel in zona centrale."
   },
   {
-    name: "Terminal 2 traghetti per Tallinn",
+    name: "Terminal traghetti per Tallinn",
     coords: [60.1575, 24.9550],
     photos: ["ferry1.jpg", "ferry2.jpg"],
     description: "Terminal traghetti per Tallinn."
@@ -114,16 +114,16 @@ helsinkiRoute.forEach(stop => {
     <p>${stop.description}</p>
   `;
 
-  L.marker(stop.coords, { icon: customIcon })
+  const marker = L.marker(stop.coords, { icon: customIcon })
     .addTo(map)
     .bindPopup(popupContent);
-	
-	marker.on('popupopen', () => {
-  GLightbox({
-    selector: '.glightbox'
-  });
-});
 
+  // 🔥 CORREZIONE FONDAMENTALE: inizializza GLightbox quando il popup si apre
+  marker.on('popupopen', () => {
+    GLightbox({
+      selector: '.glightbox'
+    });
+  });
 });
 
 // POLILINEA DEL PERCORSO
