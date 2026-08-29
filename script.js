@@ -119,11 +119,11 @@ helsinkiRoute.forEach(stop => {
     .bindPopup(popupContent);
 
   // 🔥 CORREZIONE FONDAMENTALE: inizializza GLightbox quando il popup si apre
-  marker.on('popupopen', () => {
-    GLightbox({
-      selector: '.glightbox'
-    });
+marker.on('popupopen', () => {
+  GLightbox({
+    selector: '.leaflet-popup-content .glightbox'
   });
+});
 });
 
 // POLILINEA DEL PERCORSO
