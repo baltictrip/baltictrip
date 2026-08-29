@@ -1,48 +1,124 @@
-// Inizializza la mappa
-const map = L.map('map').setView([58.5, 24.0], 6);
+// Inizializza la mappa centrata su Helsinki
+const map = L.map('map').setView([60.17, 24.94], 12);
 
-// Layer base
 L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
   attribution: '© OpenStreetMap contributors'
 }).addTo(map);
 
-// Tappe del viaggio
-const places = [
+// Icona personalizzata
+const customIcon = L.icon({
+  iconUrl: 'img/marker.png',
+  iconSize: [32, 32],
+  iconAnchor: [16, 32],
+  popupAnchor: [0, -32]
+});
+
+// TAPPE DEL PERCORSO DI HELSINKI — FOTO MULTIPLE
+const helsinkiRoute = [
   {
-    name: "Helsinki – Cattedrale",
-    coords: [60.1699, 24.9384],
-    photo: "img/helsinki.jpg",
-    description: "La Cattedrale bianca, simbolo della città."
+    name: "Aeroporto HEL",
+    coords: [60.31836, 24.96334],
+    photos: ["hel1.jpg", "hel2.jpg"],
+    description: "Arrivo a Helsinki-Vantaa Airport."
   },
   {
-    name: "Tallinn – Old Town",
-    coords: [59.437, 24.753],
-    photo: "img/tallinn.jpg",
-    description: "Centro storico medievale, patrimonio UNESCO."
+    name: "Stazione centrale",
+    coords: [60.1710, 24.9414],
+    photos: ["central1.jpg", "central2.jpg"],
+    description: "Helsinki Central Railway Station."
   },
   {
-    name: "Vilnius – Cattedrale",
-    coords: [54.686, 25.287],
-    photo: "img/vilnius.jpg",
-    description: "Cuore storico della capitale lituana."
+    name: "Piazza del Senato",
+    coords: [60.1699, 24.9523],
+    photos: ["senate1.jpg", "senate2.jpg"],
+    description: "Senate Square, cuore storico della città."
+  },
+  {
+    name: "Cattedrale della Dormizione (Uspenski)",
+    coords: [60.1686, 24.9583],
+    photos: ["uspenski1.jpg", "uspenski2.jpg"],
+    description: "Cattedrale ortodossa di Uspenski."
+  },
+  {
+    name: "Allas Sea Pool",
+    coords: [60.1682, 24.9596],
+    photos: ["allas1.jpg", "allas2.jpg"],
+    description: "Piscine sul mare con vista sul porto."
+  },
+  {
+    name: "Mercato coperto (Old Market Hall)",
+    coords: [60.1679, 24.9526],
+    photos: ["market1.jpg", "market2.jpg"],
+    description: "Mercato coperto storico sul waterfront."
+  },
+  {
+    name: "Esplanadi Park",
+    coords: [60.1676, 24.9459],
+    photos: ["esplanadi1.jpg", "esplanadi2.jpg"],
+    description: "Viale alberato nel centro di Helsinki."
+  },
+  {
+    name: "Kappeli",
+    coords: [60.1677, 24.9454],
+    photos: ["kappeli1.jpg", "kappeli2.jpg"],
+    description: "Storico ristorante nel parco Esplanadi."
+  },
+  {
+    name: "Biblioteca Oodi",
+    coords: [60.1735, 24.9383],
+    photos: ["oodi1.jpg", "oodi2.jpg"],
+    description: "Oodi, la nuova biblioteca centrale."
+  },
+  {
+    name: "Töölönlahden Park",
+    coords: [60.1770, 24.9345],
+    photos: ["toolon1.jpg", "toolon2.jpg"],
+    description: "Parco intorno al lago Töölönlahti."
+  },
+  {
+    name: "Lasipalatsi Square",
+    coords: [60.1694, 24.9389],
+    photos: ["lasipalatsi1.jpg", "lasipalatsi2.jpg"],
+    description: "Piazza moderna vicino a Kamppi."
+  },
+  {
+    name: "Omena Hotel",
+    coords: [60.1679, 24.9380],
+    photos: ["omena1.jpg", "omena2.jpg"],
+    description: "Omena Hotel in zona centrale."
+  },
+  {
+    name: "Terminal 2 traghetti per Tallinn",
+    coords: [60.1575, 24.9550],
+    photos: ["ferry1.jpg", "ferry2.jpg"],
+    description: "Terminal traghetti per Tallinn."
   }
 ];
 
-// Marker + popup con foto
-places.forEach(place => {
+// MARKER + POPUP CON FOTO MULTIPLE
+helsinkiRoute.forEach(stop => {
+
+  const photosHtml = stop.photos
+    .map(photo => `<img src="img/${photo}" width="150" style="margin:5px;" />`)
+    .join("");
+
   const popupContent = `
-    <h3>${place.name}</h3>
-    <img src="${place.photo}" alt="${place.name}" width="200" />
-    <p>${place.description}</p>
+    <h3>${stop.name}</h3>
+    <div style="display:flex; flex-wrap:wrap; gap:10px;">
+      ${photosHtml}
+    </div>
+    <p>${stop.description}</p>
   `;
-  L.marker(place.coords).addTo(map).bindPopup(popupContent);
+
+  L.marker(stop.coords, { icon: customIcon })
+    .addTo(map)
+    .bindPopup(popupContent);
 });
 
-// Percorso tra le tre città
-const route = [
-  [60.1699, 24.9384], // Helsinki
-  [59.437, 24.753],   // Tallinn
-  [54.686, 25.287]    // Vilnius
-];
+// POLILINEA DEL PERCORSO
+const routeCoords = helsinkiRoute.map(stop => stop.coords);
 
-L.polyline(route, { color: 'blue', weight: 3 }).addTo(map);
+L.polyline(routeCoords, {
+  color: 'red',
+  weight: 4
+}).addTo(map);
