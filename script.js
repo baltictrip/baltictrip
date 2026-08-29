@@ -117,6 +117,13 @@ helsinkiRoute.forEach(stop => {
   L.marker(stop.coords, { icon: customIcon })
     .addTo(map)
     .bindPopup(popupContent);
+	
+	marker.on('popupopen', () => {
+  GLightbox({
+    selector: '.glightbox'
+  });
+});
+
 });
 
 // POLILINEA DEL PERCORSO
