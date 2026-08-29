@@ -95,11 +95,15 @@ const helsinkiRoute = [
   }
 ];
 
-// MARKER + POPUP CON FOTO MULTIPLE
+// MARKER + POPUP CON FOTO MULTIPLE + GLIGHTBOX
 helsinkiRoute.forEach(stop => {
 
   const photosHtml = stop.photos
-    .map(photo => `<img src="img/${photo}" width="150" style="margin:5px;" />`)
+    .map(photo => `
+      <a href="img/${photo}" class="glightbox" data-gallery="${stop.name}">
+        <img src="img/${photo}" width="150" style="margin:5px; border-radius:4px;" />
+      </a>
+    `)
     .join("");
 
   const popupContent = `
