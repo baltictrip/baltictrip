@@ -15,6 +15,15 @@ https://baltictrip.github.io/baltictrip/
 
 ## Struttura del progetto
 
+baltictrip/
+│
+├── index.html      # Pagina principale con la mappa
+├── style.css       # Stili della mappa
+├── script.js       # Logica Leaflet (marker, popup, percorso)
+└── img/            # Foto delle città
+├── helsinki.jpg
+├── tallinn.jpg
+└── vilnius.jpg
 ---
 
 ## Tecnologie utilizzate
