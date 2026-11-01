@@ -1,0 +1,156 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Mappa del viaggio · Helsinki 2026</title>
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.css">
+<style>
+:root{--bg:#fbfaf7;--fg:#16283a;--mut:#5d6b7a;--bd:#cfd6dd;--d1:#1d4e89;--d2:#d9730d;--rt:#c2255c}
+@media (prefers-color-scheme:dark){:root{--bg:#14212e;--fg:#e9eef3;--mut:#9fb0c0;--bd:#34475a}}
+html,body{height:100%;margin:0;font:14px/1.45 Georgia,"Times New Roman",serif;color:var(--fg)}
+#map{position:absolute;inset:0}
+#bar{position:absolute;z-index:1000;top:10px;left:56px;right:10px;display:flex;flex-wrap:wrap;gap:6px;align-items:center;pointer-events:none}
+#bar>*{pointer-events:auto}
+button{font:inherit;background:var(--bg);color:var(--fg);border:1px solid var(--bd);border-radius:6px;padding:6px 10px;cursor:pointer}
+button:hover{border-color:var(--fg)}
+button:focus-visible,textarea:focus-visible{outline:3px solid #ffd43b;outline-offset:1px}
+button.on{background:var(--fg);color:var(--bg);border-color:var(--fg)}
+#info{background:var(--bg);border:1px solid var(--bd);border-radius:6px;padding:6px 10px;color:var(--mut)}
+[hidden]{display:none!important}
+.pin{width:26px;height:26px;border-radius:50%;color:#fff;font:700 11px/22px system-ui,sans-serif;text-align:center;border:2px solid #fff;box-shadow:0 1px 4px #0007;background:var(--d1)}
+.pin.d2{background:var(--d2)}
+.pin.sel{outline:3px solid #ffd43b}
+#lb{position:fixed;inset:0;z-index:2000;background:#000f;display:none;flex-direction:column}
+#lb.show{display:flex}
+.stage{flex:1;min-height:0;position:relative;display:flex;align-items:center;justify-content:center}
+#im{max-width:100%;max-height:100%;object-fit:contain}
+#er{position:absolute;color:#fff;text-align:center;padding:20px}
+.nav{position:absolute;top:50%;transform:translateY(-50%);font-size:30px;line-height:1;background:#0009;color:#fff;border-color:#fff4;padding:10px 14px}
+#x{position:absolute;top:10px;right:10px;background:#0009;color:#fff;border-color:#fff4}
+.cap{background:#111;color:#f2f2f2;padding:12px 16px 16px;max-height:34vh;overflow:auto}
+#meta{color:#b8c2cc;font-size:12px;margin-bottom:4px}
+#ct{font-size:17px;max-width:70ch}
+#ta{width:100%;box-sizing:border-box;min-height:64px;font:inherit;font-size:16px;background:#1d1d1d;color:#fff;border:1px solid #555;border-radius:6px;padding:8px}
+</style>
+</head>
+<body>
+<div id="map"></div>
+<div id="bar">
+ <button id="bEu">Europa</button>
+ <button id="bHe">Helsinki</button>
+ <button id="bRt" class="on">Percorso</button>
+ <button id="bMd">Percorso personalizzato</button>
+ <button id="bUn" hidden>Annulla ultima tappa</button>
+ <button id="bCl" hidden>Azzera</button>
+ <button id="bEd">Modifica didascalie</button>
+ <button id="bEx" hidden>Esporta didascalie</button>
+ <button id="bIm" hidden>Importa didascalie</button>
+ <input id="fi" type="file" accept=".json,application/json" hidden>
+ <span id="info"></span>
+</div>
+<div id="lb" role="dialog" aria-modal="true" aria-label="Foto a schermo intero">
+ <div class="stage">
+  <button class="nav" id="pv" style="left:8px" aria-label="Foto precedente">‹</button>
+  <img id="im" alt="">
+  <div id="er" hidden></div>
+  <button class="nav" id="nx" style="right:8px" aria-label="Foto successiva">›</button>
+  <button id="x" aria-label="Chiudi">Chiudi ✕</button>
+ </div>
+ <div class="cap"><div id="meta"></div><div id="ct"></div><textarea id="ta" aria-label="Didascalia" placeholder="Scriva qui la didascalia"></textarea></div>
+</div>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.js"></script>
+<script>
+const DIR='photos/';            // cartella delle foto, accanto a questo file
+const KEY='mappa-didascalie-v1';
+// [nome file, data/ora locale, latitudine, longitudine] in ordine cronologico
+const P=[["PXL_20260821_073947344.jpg","2026-08-21T09:39:47",45.500211,12.338775],["PXL_20260821_112809734.jpg","2026-08-21T14:28:09",60.170917,24.941544],["PXL_20260821_113012851.MP.jpg","2026-08-21T14:30:12",60.170386,24.941133],["PXL_20260821_113158990.jpg","2026-08-21T14:31:58",60.170725,24.940797],["PXL_20260821_114453232.jpg","2026-08-21T14:44:53",60.167564,24.944164],["PXL_20260821_114823682.jpg","2026-08-21T14:48:23",60.167172,24.947494],["PXL_20260821_120034763.jpg","2026-08-21T15:00:34",60.167714,24.950797],["PXL_20260821_120710704.jpg","2026-08-21T15:07:10",60.169164,24.951947],["PXL_20260821_120906745.jpg","2026-08-21T15:09:06",60.169358,24.951411],["PXL_20260821_121301058.jpg","2026-08-21T15:13:01",60.169089,24.951806],["PXL_20260821_121717301.jpg","2026-08-21T15:17:17",60.170067,24.952761],["PXL_20260821_122744637.jpg","2026-08-21T15:27:44",60.168944,24.958594],["PXL_20260821_123505753.MP.jpg","2026-08-21T15:35:05",60.168194,24.960089],["PXL_20260821_123802923.jpg","2026-08-21T15:38:02",60.168633,24.960283],["PXL_20260821_123858273.jpg","2026-08-21T15:38:58",60.168633,24.960283],["PXL_20260821_125158417.MP.jpg","2026-08-21T15:51:58",60.167111,24.957872],["PXL_20260821_125748055.jpg","2026-08-21T15:57:48",60.16755,24.958156],["PXL_20260821_132048854.jpg","2026-08-21T16:20:48",60.167244,24.949131],["PXL_20260821_132617925.jpg","2026-08-21T16:26:17",60.167692,24.942667],["PXL_20260821_133643386.jpg","2026-08-21T16:36:43",60.166014,24.936383],["PXL_20260821_133710065.jpg","2026-08-21T16:37:10",60.166014,24.936383],["PXL_20260821_133846428.jpg","2026-08-21T16:38:46",60.166025,24.936353],["PXL_20260821_142702481.MP.jpg","2026-08-21T17:27:02",60.167797,24.947522],["PXL_20260821_143539083.jpg","2026-08-21T17:35:39",60.165986,24.952856],["PXL_20260821_143836831.jpg","2026-08-21T17:38:36",60.166194,24.952808],["PXL_20260821_144022501.jpg","2026-08-21T17:40:22",60.166831,24.952464],["PXL_20260821_144136038.jpg","2026-08-21T17:41:36",60.166831,24.952464],["PXL_20260821_155851586.jpg","2026-08-21T18:58:51",60.173392,24.936692],["PXL_20260821_161256647.jpg","2026-08-21T19:12:56",60.173692,24.937606],["PXL_20260821_163150441.jpg","2026-08-21T19:31:50",60.173042,24.937983],["PXL_20260821_164247866.jpg","2026-08-21T19:42:47",60.174736,24.935864],["PXL_20260821_164436574.jpg","2026-08-21T19:44:36",60.174214,24.936169],["PXL_20260821_164521113.jpg","2026-08-21T19:45:21",60.174214,24.936169],["PXL_20260821_164652695.MP.jpg","2026-08-21T19:46:52",60.175322,24.935711],["PXL_20260821_164920182.MP.jpg","2026-08-21T19:49:20",60.175544,24.935753],["PXL_20260821_165817539.jpg","2026-08-21T19:58:17",60.175583,24.935422],["PXL_20260821_170311781.MP.jpg","2026-08-21T20:03:11",60.176825,24.931394],["PXL_20260821_171242131.jpg","2026-08-21T20:12:42",60.173492,24.933489],["PXL_20260821_171749474.MP.jpg","2026-08-21T20:17:49",60.170172,24.935731],["PXL_20260822_034002925.jpg","2026-08-22T06:40:02",60.158411,24.920189],["PXL_20260822_034415636.jpg","2026-08-22T06:44:15",60.155981,24.920839],["PXL_20260822_035434998.jpg","2026-08-22T06:54:34",60.149622,24.914439],["PXL_20260822_042302023.jpg","2026-08-22T07:23:02",60.130275,24.905142],["PXL_20260822_042827497.MP~2.jpg","2026-08-22T07:28:27",60.106061,24.902786]];
+const $=id=>document.getElementById(id);
+const fmt=t=>new Date(t).toLocaleString('it-IT',{day:'numeric',month:'long',year:'numeric',hour:'2-digit',minute:'2-digit'});
+const place=p=>p[2]>59?'Helsinki e dintorni':'Zona di Venezia';
+const defCap=p=>place(p)+', '+fmt(p[1]);
+let saved={},remote={},edit=false,mode='chrono',showRoute=true,custom=[],cur=0;
+try{saved=JSON.parse(localStorage.getItem(KEY)||'{}')}catch(e){}
+const store=()=>{try{localStorage.setItem(KEY,JSON.stringify(saved))}catch(e){}};
+const cap=i=>saved[P[i][0]]??remote[P[i][0]]??defCap(P[i]);
+fetch('captions.json').then(r=>r.ok?r.json():{}).then(j=>{remote=j;if($('lb').classList.contains('show'))openPhoto(cur)}).catch(()=>{});
+
+const map=L.map('map');
+L.tileLayer('https://tile.openstreetmap.org/{z}/{x}/{y}.png',{maxZoom:19,attribution:'&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a>'}).addTo(map);
+const all=P.map(p=>[p[2],p[3]]),hel=all.filter(c=>c[0]>59);
+const view=b=>map.fitBounds(b,{padding:[50,50]});
+view(all);
+
+const M=P.map((p,i)=>{
+ const d2=p[1].slice(0,10)>'2026-08-21'?' d2':'';
+ const m=L.marker(all[i],{keyboard:true,title:'Foto '+(i+1),icon:L.divIcon({className:'',html:'<div class="pin'+d2+'">'+(i+1)+'</div>',iconSize:[26,26]})}).addTo(map);
+ m.bindTooltip(()=>'Foto '+(i+1)+' · '+fmt(p[1]),{direction:'top',offset:[0,-12]});
+ m.on('click',()=>{mode==='custom'?(custom.push(i),draw()):openPhoto(i)});
+ return m;
+});
+
+const lines=L.layerGroup().addTo(map);
+const km=(a,b)=>{const r=Math.PI/180,x=Math.sin((b[0]-a[0])*r/2)**2+Math.cos(a[0]*r)*Math.cos(b[0]*r)*Math.sin((b[1]-a[1])*r/2)**2;return 12742*Math.asin(Math.sqrt(x))};
+function draw(){
+ lines.clearLayers();
+ const r=mode==='chrono'?P.map((_,i)=>i):custom;let t=0;
+ for(let k=1;k<r.length;k++){
+  const a=all[r[k-1]],b=all[r[k]],d=km(a,b);t+=d;
+  if(showRoute)L.polyline([a,b],{color:'#c2255c',weight:4,opacity:.85,dashArray:d>50?'8 8':null}).addTo(lines);
+ }
+ $('info').textContent=mode==='custom'&&!r.length?'Faccia clic sui segnalini nell\u2019ordine desiderato':'Percorso: '+r.length+' tappe, '+Math.round(t).toLocaleString('it-IT')+' km in linea retta';
+}
+
+function openPhoto(i){
+ cur=(i+P.length)%P.length;const p=P[cur];
+ $('im').src=DIR+p[0];$('im').alt=cap(cur);$('er').hidden=true;
+ $('meta').textContent='Foto '+(cur+1)+' di '+P.length+' · '+fmt(p[1]);
+ $('ct').textContent=cap(cur);$('ta').value=cap(cur);
+ $('ct').hidden=edit;$('ta').hidden=!edit;
+ $('lb').classList.add('show');
+ M.forEach((m,k)=>{const e=m.getElement();e&&e.firstChild.classList.toggle('sel',k===cur)});
+}
+$('im').onerror=()=>{$('er').hidden=false;$('er').textContent='Foto non trovata: '+DIR+P[cur][0]};
+$('im').onload=()=>{$('er').hidden=true};
+const closeLb=()=>{$('lb').classList.remove('show');$('im').removeAttribute('src');map.panTo(all[cur])};
+$('x').onclick=closeLb;$('pv').onclick=()=>openPhoto(cur-1);$('nx').onclick=()=>openPhoto(cur+1);
+$('ta').oninput=e=>{saved[P[cur][0]]=e.target.value;store()};
+document.addEventListener('keydown',e=>{
+ if(!$('lb').classList.contains('show'))return;
+ if(e.key==='Escape')closeLb();
+ if(e.target.tagName==='TEXTAREA')return;
+ if(e.key==='ArrowLeft')openPhoto(cur-1);
+ if(e.key==='ArrowRight')openPhoto(cur+1);
+});
+
+$('bEu').onclick=()=>view(all);
+$('bHe').onclick=()=>view(hel);
+$('bRt').onclick=e=>{showRoute=!showRoute;e.target.classList.toggle('on',showRoute);draw()};
+$('bMd').onclick=e=>{
+ mode=mode==='chrono'?'custom':'chrono';
+ e.target.classList.toggle('on',mode==='custom');
+ $('bUn').hidden=$('bCl').hidden=mode!=='custom';
+ draw();
+};
+$('bUn').onclick=()=>{custom.pop();draw()};
+$('bCl').onclick=()=>{custom=[];draw()};
+$('bEd').onclick=e=>{
+ edit=!edit;e.target.classList.toggle('on',edit);
+ $('bEx').hidden=$('bIm').hidden=!edit;
+};
+$('bEx').onclick=()=>{
+ const o={};P.forEach((p,i)=>o[p[0]]=cap(i));
+ const a=document.createElement('a');
+ a.href=URL.createObjectURL(new Blob([JSON.stringify(o,null,1)],{type:'application/json'}));
+ a.download='captions.json';a.click();
+};
+$('bIm').onclick=()=>$('fi').click();
+$('fi').onchange=async()=>{
+ try{Object.assign(saved,JSON.parse(await $('fi').files[0].text()));store();$('info').textContent='Didascalie importate'}
+ catch(e){$('info').textContent='File non valido'}
+ $('fi').value='';
+};
+draw();
+</script>
+</body>
+</html>
